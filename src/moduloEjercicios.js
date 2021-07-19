@@ -7,7 +7,11 @@ import basededatos from './basededatos.js';
 export const promedioAnioEstreno = () => {
     // Ejemplo de como accedo a datos dentro de la base de datos
     // console.log(basededatos.peliculas);
-    return [];
+    let sum = 0
+    for (let i in basededatos.peliculas){
+        sum += basededatos.peliculas[i].anio
+    }
+    return sum/basededatos.peliculas.length;
 };
 
 /**
@@ -16,7 +20,27 @@ export const promedioAnioEstreno = () => {
 * @param {number} promedio
   */
 export const pelicuasConCriticaPromedioMayorA = (promedio) => {
-    return [];
+    let criticas = new Map()
+    for (let i in basededatos.calificaciones){
+        if (criticas.has(basededatos.calificaciones[i].pelicula)){
+            let aux = criticas.get(basededatos.calificaciones[i].pelicula)
+            aux.push(basededatos.calificaciones[i].puntuacion)
+            criticas.set(basededatos.calificaciones[i].pelicula, aux)
+        }else{
+            let aux = [basededatos.calificaciones[i].puntuacion]
+            criticas.set(basededatos.calificaciones[i].pelicula, aux)
+        }
+    }
+    let peliculas = new Array()
+    for (let [key, value] of criticas){
+        let media = (value.reduce((a,b) => {return a+b}))/value.length
+        if (promedio < media){
+            let pelicula = basededatos.peliculas.find((pelicula) => pelicula.id === key)
+            peliculas.push(pelicula.nombre)
+        }
+    }
+    
+    return peliculas;
 };
 
 /**
@@ -24,7 +48,14 @@ export const pelicuasConCriticaPromedioMayorA = (promedio) => {
 * @param {string} nombreDirector
 */
 export const peliculasDeUnDirector = (nombreDirector) => {
-    return [];
+    let director = basededatos.directores.find((director) => director.nombre === nombreDirector)
+    let peliculas = new Array()
+    for (let i in basededatos.peliculas){
+        if (basededatos.peliculas[i].directores.includes(director.id)){
+            peliculas.push(basededatos.peliculas[i].nombre)
+        }
+    }
+    return peliculas;
 };
 
 /**
@@ -32,7 +63,13 @@ export const peliculasDeUnDirector = (nombreDirector) => {
 * @param {number} peliculaId
 */
 export const promedioDeCriticaBypeliculaId = (peliculaId) => {
-    return [];
+    let puntuaciones = new Array()
+    for (let i in basededatos.calificaciones){
+        if (basededatos.calificaciones[i].pelicula === peliculaId){
+            puntuaciones.push(basededatos.calificaciones[i].puntuacion)
+        }
+    }
+    return puntuaciones.reduce((a,b) => {return a + b})/puntuaciones.length;
 };
 
 /**
@@ -68,9 +105,17 @@ export const promedioDeCriticaBypeliculaId = (peliculaId) => {
     ],
  */
 export const obtenerPeliculasConPuntuacionExcelente = () => {
-    // Ejemplo de como accedo a datos dentro de la base de datos
-    // console.log(basededatos.peliculas);
-    return [];
+    let peliculasId = new Set()
+    for (let i in basededatos.calificaciones){
+        if (basededatos.calificaciones[i].puntuacion >= 9){
+            peliculasId.add(basededatos.calificaciones[i].pelicula)
+        }
+    }
+    let peliculas = new Array()
+    for (let i of peliculasId){
+        peliculas.push(basededatos.peliculas.find((pelicula) => pelicula.id === i))
+    }
+    return peliculas;
 };
 
 /**
@@ -121,5 +166,34 @@ export const obtenerPeliculasConPuntuacionExcelente = () => {
  * @param {string} nombrePelicula
  */
 export const expandirInformacionPelicula = (nombrePelicula) => {
-    return {};
+    let pelicula = basededatos.peliculas.find((pelicula) => pelicula.nombre === nombrePelicula)
+    let directores = new Array()
+    for (let i in pelicula.directores){
+        directores.push(basededatos.directores.find((director) => director.id === pelicula.directores[i]))
+    }
+    pelicula.directores = directores
+
+    let generos = new Array()
+    for (let i in pelicula.generos){
+        generos.push(basededatos.generos.find((genero) => genero.id === pelicula.generos[i]))
+    }
+    pelicula.generos = generos
+
+    let criticas = new Array()
+    for (let i in basededatos.calificaciones){
+        if (basededatos.calificaciones[i].pelicula === pelicula.id){
+            let critica = {}
+            let critico = basededatos.criticos.find((critico) => critico.id === basededatos.calificaciones[i].critico)
+            let pais = basededatos.paises.find((pais) => pais.id === critico.pais)
+            let puntuacion = basededatos.calificaciones[i].puntuacion
+            critico.pais = pais
+            critica.critico = critico
+            critica.puntuacion = puntuacion
+            
+            criticas.push(critica)
+        }
+    }
+    pelicula.criticas = criticas
+
+    return pelicula;
 };
